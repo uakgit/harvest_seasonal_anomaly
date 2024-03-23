@@ -1,0 +1,214 @@
+---
+params: 
+title: "Influence of Summer Temperature Rise On Grepes Harvest Dates in Bordeaux, France "
+author: "Usman Ahmed"
+output: rmarkdown::github_document
+---
+
+## Project Description
+
+In northern countries, the grapevine typically breaks bud in April-May, flowers occur in June, and the veraison at the end of July or during August. The ripening phase initiates at the veraison and finishes when grapes have reached a certain level of maturity. Currently, in France, the grape harvest is most often scheduled between 10 September and 10 October (Van Leeuwen et al., 2008). Due to strong control over temperature on grape ripening, The grapes harvest dates (GHD) are closely related to growing season temperature (GST). 
+
+GHD vlaues are following the nomenclature adopted by the Angot, 1883 and are expressed as the number of days after the 31 August **e.g. 1st September is 1, 1st October is 31, 29th August is -2**
+
+GST is the mean of monthly mean of daily maximum temperatures in &deg;C (Harris et al., 2014) from April to August.
+
+```{r packages, warning=FALSE, message=FALSE}
+#  Packages  ----  
+suppressMessages(
+  source('scripts/packages.R', 
+         encoding = "UTF-8")
+)
+
+```
+
+Importing GHD and GST data (Duax et al, 2012) of Bordeaux region. 
+
+```{r data_import}
+
+# Grapes harvest dates of Bordeaux
+
+GHD <- 
+  "raw_data/Project_4_GHD.csv"
+
+GHD <- 
+  read.csv(
+    GHD, 
+    header=T, 
+    skip=0, 
+    sep=";", 
+    na.strings="NA"
+  ) 
+
+# Growing seasonal temperature of Bordeaux
+
+GST_Bor <- 
+  "raw_data/Project_4_Bor.tmax.csv"
+
+GST_Bor <- 
+  read.csv(
+    GST_Bor, 
+    header=T, 
+    skip=0, 
+    sep=";", 
+    na.strings="NA"
+  )
+
+```
+
+The time series of GST starts from year 1901, therefore, we will extract GHD starting from year 1901 as well.
+
+```{r GHD_1901}
+
+GHD <- 
+  GHD [!(GHD$Year.GHD<1901),]
+
+```
+
+### The regions for which GHDs are available, are Bordeaux, Burgundy, Champagne 1, Low Loire Valley, Spain and Switzerland
+
+```{r GHD_ggplot, warning=FALSE, message=FALSE, echo=FALSE, fig.align='center', fig.height=5, fig.width=9}
+
+ggplot(GHD, aes(x=GHD$Year.GHD))+
+  geom_line(aes(y=GHD$Bor, colour="Bor"), size=0.8)+
+  geom_line(aes(y=GHD$Bur, colour="Bur"), size=0.8)+
+  geom_line(aes(y=GHD$Cha2, colour="Cha2"), size=0.8)+
+  geom_line(aes(y=GHD$LLV, colour="LLV"), size=0.8)+
+  geom_line(aes(y=GHD$Spa, colour="Spa"), size=0.8)+
+  geom_line(aes(y=GHD$Swi, colour="Swi"), size=0.8)+
+  
+  scale_color_manual("Legend", breaks=c("Bor","Bur","Cha2","LLV","Spa","Swi"), values=c("red", "green","blue","black","brown","Yellow"))+
+  
+  coord_cartesian(xlim = c(1900,2015), ylim = c(65, -10))+
+  scale_y_reverse( lim=c(65,-10))+
+  
+  labs(x="Year", y="GHD")+ ggtitle("Grape Harvest Dates (GHD)")+
+  theme_bw()+
+  theme(axis.text.x = element_text(size=12),axis.text.y = element_text(size=12),
+        plot.title = element_text(hjust = 0.5))
+
+```
+
+## GST(mean of maximum temperature (tmax) from Apri-Aug of each year) and GHD of Bordeaux
+
+We will consider here only Bordeaux, France in our analysis. An increasing trend of mean summer temperature coincides early grapes harvest dates at Bordeaux region.
+
+```{r GHD-GST_plot, fig.align='center', fig.height=5, fig.width=9}
+
+# Calculating GST for Bordeaux region 
+
+GST_Bor <- GST_Bor %>% 
+  mutate(
+    Bor_gst = 
+  rowMeans(
+    .[,c(5:9)], 
+    na.rm=TRUE
+  )
+  ) %>% 
+  rename(
+    year = Year
+    )
+
+## GHD is available till 2010, therefore, we will extract GST till 2012
+
+GST_Bor <- 
+  GST_Bor [!(GST_Bor$year>2010),] 
+
+par(mar=c(5,5,3,5))
+
+plot(
+  GHD$Year.GHD, 
+  GHD$Bor, 
+  type ="l",
+  col="green", 
+  xlim = c(1900,2010), 
+  ylim = c(55,-5),
+  ylab="Bordeaux GHD", 
+  xlab="Year"
+)
+
+par(new=TRUE) 
+plot(
+  GST_Bor$year, 
+  GST_Bor$Bor_gst, 
+  type ="l", 
+  col="red",
+  xlim = c(1900,2010), 
+  ylim = c(20,30),
+  axes= FALSE, 
+  xlab = NA, 
+  ylab = NA
+) 
+
+axis(side = 4, col="red")
+
+mtext(
+  side = 4, 
+  line = 3, 
+  'Bordeaux GST (°C)'
+)
+
+title(
+  main = 
+    list("GHD-GST (April-August) of Bordeaux Region",
+         col = "black", 
+         font = 1)
+)
+
+```
+
+```{r GHD-GST_cor-plot, fig.align='center', fig.height=5, fig.width=9}
+
+plot(
+  GST_Bor$Bor_gst, 
+  GHD$Bor, 
+  type="p", 
+  col = "green", 
+  ylab="Bordeaux GHD", 
+  xlab="Bordeaux GST (°C)"
+)
+
+abline(
+  mod <-
+    lm(
+      GHD$Bor~GST_Bor$Bor_gst
+    ),
+  col="red",
+  lwd=1.5
+)
+
+corr <- 
+  cor(
+    GST_Bor$Bor_gst, 
+    GHD$Bor,  
+    method = "pearson", 
+    use = "complete.obs"
+  )
+
+legend( 
+  x='topright', 
+  legend=paste(
+    'Corr. Coef. =', round(
+      cor(
+        GST_Bor$Bor_gst, 
+        GHD$Bor,  
+        method = "pearson", 
+        use = "complete.obs"
+      ), 3
+    )
+  )
+)
+
+title(
+  main = 
+    list(
+      "GHD-GST Correlation of Bordeaux Region", 
+      col = "black", 
+      font = 1)
+)
+
+```
+
+High negative correlation shows that increasing summer mean temperature is resulting earlier grapes harvest in the Bordeaux region. Similar trends of early GHD are also observed for other grapes harvest regions. 
+
+*Data Source:University of Bremen
