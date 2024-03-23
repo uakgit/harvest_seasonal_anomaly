@@ -1,1 +1,3 @@
 # harvest-seasonal-anomaly
+
+In northern countries, the grapevine typically breaks bud in April-May, flowers occur in June, and the veraison at the end of July or during August. The ripening phase initiates at the veraison and finishes when grapes have reached a certain level of maturity. Currently, in France, the grape harvest is most often scheduled between 10 September and 10 October (Van Leeuwen et al., 2008). Due to strong control over temperature on grape ripening, The grapes harvest dates (GHD) are closely related to growing season temperature (GST). The calculated graphs show anomalies in GHD in relation with GST.
